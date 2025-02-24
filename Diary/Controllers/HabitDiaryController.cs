@@ -16,7 +16,7 @@ namespace Diary.Controllers
     /// Diary
     /// </summary>
     [ApiController]
-    [Route("api/v1/[controller]")]
+    [Route("api/[controller]")]
     public class HabitDiaryController(IHabitDiaryService _service,
                                       IMapper            _mapper,
                                       IDistributedCache  _distributedCache) : ControllerBase
@@ -47,7 +47,7 @@ namespace Diary.Controllers
 
             if (serialized is not null)
             {
-                var cachResult = JsonSerializer.Deserialize<IEnumerable<HabitDiaryResponse>>(serialized);
+                var cachResult = JsonSerializer.Deserialize<HabitDiaryResponse>(serialized);
 
                 if (cachResult is not null)
                 {

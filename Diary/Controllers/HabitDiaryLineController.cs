@@ -15,7 +15,7 @@ namespace Diary.Controllers
     /// Diary Lines
     /// </summary>
     [ApiController]
-    [Route("api/v1/[controller]")]
+    [Route("api/[controller]")]
     public class HabitDiaryLineController(IHabitDiaryLineService _service,
                                           IMapper                _mapper,
                                           IDistributedCache      _distributedCache) : ControllerBase

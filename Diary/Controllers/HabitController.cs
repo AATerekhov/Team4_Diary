@@ -16,7 +16,7 @@ namespace Diary.Controllers
     /// Habit
     /// </summary>
     [ApiController]
-    [Route("api/v1/[controller]")]
+    [Route("api/[controller]")]
     public class HabitController(IHabitService      _service,
                                  IMapper            _mapper,
                                  IDistributedCache  _distributedCache) : ControllerBase

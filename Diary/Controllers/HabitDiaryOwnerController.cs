@@ -14,7 +14,7 @@ namespace Diary.Controllers
     /// DiaryOwner
     /// </summary>
     [ApiController]
-    [Route("api/v1/[controller]")]
+    [Route("api/[controller]")]
     public class HabitDiaryOwnerController : ControllerBase
     {
         private readonly IHabitDiaryOwnerService _service;

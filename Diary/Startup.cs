@@ -21,15 +21,16 @@ namespace Diary
     public class Startup
     {
         private IConfiguration Configuration { get; }
-
+        private const string Origin = "DiarySpecificOrigins";
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
         }
 
         public void ConfigureServices(IServiceCollection services)
-        {
+        {       
             var connectionString = Environment.GetEnvironmentVariable("diary_connection_db_string");
+            var corsConfig       = Configuration.GetSection("CorsSettings").Get<CorsSettings>();
 
             services.AddDbContext<EfDbContext>(optionsBuilder
                => optionsBuilder
@@ -38,6 +39,19 @@ namespace Diary
             services.AddStackExchangeRedisCache(options =>
             {
                 options.Configuration = Configuration.GetConnectionString("Redis");
+            });
+
+
+
+            services.AddCors(options =>
+            {
+                options.AddPolicy(name: Origin,
+                                  build =>
+                                  {
+                                      build.WithOrigins(corsConfig.Origins)
+                                      .WithMethods(corsConfig.Methods)
+                                      .WithHeaders(corsConfig.Headers);
+                                  });
             });
 
             InstallAutomapper(services);
@@ -89,6 +103,7 @@ namespace Diary
                 app.UseHsts();
             }
 
+            app.UseCors(Origin);
 
             app.UseOpenApi();
             app.UseSwaggerUi(x =>
