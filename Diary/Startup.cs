@@ -15,6 +15,12 @@ using Microsoft.Extensions.Hosting;
 using FluentValidation.AspNetCore;
 using FluentValidation;
 using Diary.Validators;
+using Diary.GRPC.Services;
+using Grpc.Core;
+using GrpcDiary;
+using Grpc.Net;
+using Grpc.AspNetCore;
+using Google.Protobuf.WellKnownTypes;
 
 namespace Diary
 {
@@ -63,11 +69,12 @@ namespace Diary
             services.AddControllers();
             services.AddFluentValidationAutoValidation();
             services.AddValidators();
+            services.AddGrpc();
 
             services.AddMassTransit(configurator =>
             {
                 configurator.SetKebabCaseEndpointNameFormatter();
-                configurator.AddConsumer<CreateDiaryLineFromMagazineConsumer>();
+                //configurator.AddConsumer<CreateDiaryLineFromMagazineConsumer>();
                 configurator.AddConsumer<RoomDesignerStartingRoomConsumer>();
 
                 configurator.UsingRabbitMq((context, cfg) =>
@@ -112,7 +119,6 @@ namespace Diary
             });
 
             app.UseHttpsRedirection();
-
             app.UseRouting();
             app.UseHealthChecks("/diaryHealth", new HealthCheckOptions(){
                 Predicate = healthCheck => healthCheck.Tags.Contains("diaryHealthCheck")
@@ -121,6 +127,7 @@ namespace Diary
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapGrpcService<GRPC.Services.DiaryGrpcService>();
             });
         }
 
