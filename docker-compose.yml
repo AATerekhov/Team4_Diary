@@ -12,6 +12,7 @@ services:
       ASPNETCORE_URLS: http://+:5000
       ConnectionStrings:Redis: redis:6379,ssl=False,abortConnect=False
       diary_connection_db_string: "Host=diary_db;Port=5432;Database=diarydb;Username=postgres;Password=1234;Include Error Detail=true"
+      DOTNET_SYSTEM_NET_HTTP_SOCKETSHTTPHANDLER_HTTP2UNENCRYPTEDSUPPORT: "true"
     ports:
       - 5000:5000
     networks:

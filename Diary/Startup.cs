@@ -21,6 +21,7 @@ using GrpcDiary;
 using Grpc.Net;
 using Grpc.AspNetCore;
 using Google.Protobuf.WellKnownTypes;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 namespace Diary
 {
@@ -45,9 +46,7 @@ namespace Diary
             services.AddStackExchangeRedisCache(options =>
             {
                 options.Configuration = Configuration.GetConnectionString("Redis");
-            });
-
-
+            });        
 
             services.AddCors(options =>
             {
@@ -69,7 +68,22 @@ namespace Diary
             services.AddControllers();
             services.AddFluentValidationAutoValidation();
             services.AddValidators();
+     
             services.AddGrpc();
+            services.AddScoped<GRPC.Services.DiaryGrpcService>();
+
+            services.Configure<KestrelServerOptions>(options =>
+            {
+                options.ListenAnyIP(5001, listenOptions =>
+                {
+                    listenOptions.Protocols = HttpProtocols.Http2;
+                });
+
+                options.ListenAnyIP(5000, listenOptions =>
+                {
+                    listenOptions.Protocols = HttpProtocols.Http1;
+                });
+            });    
 
             services.AddMassTransit(configurator =>
             {
@@ -92,6 +106,7 @@ namespace Diary
 
             });
 
+          
             services.AddOpenApiDocument(options =>
             {
                 options.Title = "Diary API doc";
@@ -109,7 +124,7 @@ namespace Diary
             {
                 app.UseHsts();
             }
-
+         
             app.UseCors(Origin);
 
             app.UseOpenApi();
@@ -118,12 +133,14 @@ namespace Diary
                 x.DocExpansion = "list";
             });
 
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection();
             app.UseRouting();
             app.UseHealthChecks("/diaryHealth", new HealthCheckOptions(){
                 Predicate = healthCheck => healthCheck.Tags.Contains("diaryHealthCheck")
             });
 
+          
+      
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
