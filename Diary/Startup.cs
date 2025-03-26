@@ -101,15 +101,14 @@ namespace Diary
                                     h.Username(rmqSettings.Login);
                                     h.Password(rmqSettings.Password);
                                 });
-                  cfg.ConfigureEndpoints(context);
+                   cfg.ConfigureEndpoints(context);
                 });
-
             });
 
           
             services.AddOpenApiDocument(options =>
             {
-                options.Title = "Diary API doc";
+                options.Title   = "Diary API doc";
                 options.Version = "1.0";
             });
         }
@@ -138,9 +137,7 @@ namespace Diary
             app.UseHealthChecks("/diaryHealth", new HealthCheckOptions(){
                 Predicate = healthCheck => healthCheck.Tags.Contains("diaryHealthCheck")
             });
-
-          
-      
+              
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();

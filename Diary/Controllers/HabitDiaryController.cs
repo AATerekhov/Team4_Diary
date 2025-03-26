@@ -114,7 +114,6 @@ namespace Diary.Controllers
                     SlidingExpiration = TimeSpan.FromHours(1)
                 });
 
-
             return Ok(response);
         }
 
@@ -127,6 +126,7 @@ namespace Diary.Controllers
         public async Task<ActionResult<HabitDiaryResponse>> CreateDiaryAsync(CreateHabitDiaryRequest request)
         {
             var diary = await _service.CreateAsync(_mapper.Map<CreateHabitDiaryDto>(request), HttpContext.RequestAborted);
+            await _distributedCache.RemoveAsync(KeyForCache.DiariesByDiaryOwnerIdKey(diary.DiaryOwnerId));
             return Ok(_mapper.Map<HabitDiaryResponse>(diary));
         }
 
@@ -141,6 +141,8 @@ namespace Diary.Controllers
         public async Task<ActionResult<HabitDiaryResponse>> EditDiaryAsync(Guid id, EditHabitDiaryRequest request)
         {
             var diary = await _service.UpdateAsync(id, _mapper.Map<EditHabitDiaryRequest, EditHabitDiaryDto>(request), HttpContext.RequestAborted);
+            await _distributedCache.RemoveAsync(KeyForCache.DiaryKey(id));
+            await _distributedCache.RemoveAsync(KeyForCache.DiariesByDiaryOwnerIdKey(diary.DiaryOwnerId));
 
             return Ok(_mapper.Map<HabitDiaryResponse>(diary));
         }
@@ -154,6 +156,7 @@ namespace Diary.Controllers
         public async Task<IActionResult> DeleteDiary(Guid id)
         {
             await _service.DeleteAsync(id, HttpContext.RequestAborted);
+            await _distributedCache.RemoveAsync(KeyForCache.DiaryKey(id));
             return Ok($"Дневник с id {id} удален");
         }
     }
