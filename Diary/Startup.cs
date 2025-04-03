@@ -22,6 +22,11 @@ using Grpc.Net;
 using Grpc.AspNetCore;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Serilog;
+using Serilog.Formatting.Compact;
+using Serilog.Sinks.Elasticsearch;
+using Serilog.Sinks.Tcp;
+using Diary.Middlewares;
 
 namespace Diary
 {
@@ -111,6 +116,8 @@ namespace Diary
                 options.Title   = "Diary API doc";
                 options.Version = "1.0";
             });
+
+            ConfigureLogging(services);
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -123,9 +130,8 @@ namespace Diary
             {
                 app.UseHsts();
             }
-         
+            app.UseLoggingMiddleware();
             app.UseCors(Origin);
-
             app.UseOpenApi();
             app.UseSwaggerUi(x =>
             {
@@ -143,6 +149,7 @@ namespace Diary
                 endpoints.MapControllers();
                 endpoints.MapGrpcService<GRPC.Services.DiaryGrpcService>();
             });
+
         }
 
         private static IServiceCollection InstallAutomapper(IServiceCollection services)
@@ -164,7 +171,43 @@ namespace Diary
 
             configuration.AssertConfigurationIsValid();
             return configuration;
-        }      
+        }
+
+        private void ConfigureLogging(IServiceCollection services)
+        {
+            var elasticsearchUrl = Environment.GetEnvironmentVariable("SERILOG_ELASTICSEARCH_URL");
+            var logstashUrl = Environment.GetEnvironmentVariable("SERILOG_LOGSTASH_URL");
+
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Information()
+                .Enrich.FromLogContext()
+                .Enrich.WithProperty("Application", "Diary")
+                .Enrich.WithMachineName()
+                .WriteTo.Console()
+                .WriteTo.File(
+                    path: "logs/diary-log.json",
+                    rollingInterval: RollingInterval.Day,
+                    formatter: new CompactJsonFormatter())
+                .WriteTo.Elasticsearch(new ElasticsearchSinkOptions(new Uri(elasticsearchUrl))
+                {
+                    BatchPostingLimit = 1, 
+                    Period = TimeSpan.FromSeconds(1), 
+                    AutoRegisterTemplate = true,
+                    IndexFormat = "diary-logs-{0:yyyy.MM.dd}",
+                    ModifyConnectionSettings = x => x.ServerCertificateValidationCallback(
+                        (o, certificate, arg3, arg4) => true) 
+                })
+               .WriteTo.TcpSink(
+                    uri: $"tcp://{logstashUrl.Split(':')[0]}:{logstashUrl.Split(':')[1]}",
+                    formatter: new CompactJsonFormatter())
+                .CreateLogger();
+
+            services.AddLogging(loggingBuilder =>
+            {
+                loggingBuilder.ClearProviders();
+                loggingBuilder.AddSerilog();
+            });
+        }
 
     }
 }
